@@ -17,7 +17,6 @@ namespace TestApplication
             {
                 Console.WriteLine($"Substring: {subh}");
             }
-          
             for (int index = 0; index < subs.Length; index++)
             {
                 if (subs[index] == null)
@@ -34,19 +33,13 @@ namespace TestApplication
                 else
                 {
                     string FolderNam = subs[index];
-
                     Console.WriteLine(FolderNam);
                     HardDelete(ref FolderNam);
-
                 }
             }
         }
-
         public static void Main()
         {
-
-
-
             while (true)
             {
                 string conf;
@@ -54,14 +47,9 @@ namespace TestApplication
                 conf = sr.ReadToEnd();
                 sr.Close();
                 string[] subs = conf.Split("\r\n");
-
-
                 Console.WriteLine("\nWhat is your name PC?");
                 NamePC(out string pc);
-
-
-                //https://ru.stackoverflow.com/questions/557945/Установить-присутствует-ли-элемент-в-массиве-С
-                for (int index = 0; index < subs.Length; index++)  // Проверка на наличие узера
+                for (int index = 0; index < subs.Length; index++)  
                 {
 
                     if (subs[index].Contains("User"))
@@ -76,17 +64,10 @@ namespace TestApplication
                         int ur = userprofile.Length;
                         ReadNum(out int name, in ur);
                         if (name == 999) continue;
-
-
                         string value = Path.GetFileName(userprofile[name]);
                         Console.WriteLine("\nТы выбрал = " + value + "\nНажми Enter");
                         Console.ReadKey(true);
-
-
                         subs[index] = pc + subs[index].Replace("userprofile", Path.GetFileName(userprofile[name]));
-
-
-
                         char[] MyChar = { '*' };
                         if (Directory.Exists(subs[index].TrimEnd(MyChar)))
                         {
@@ -98,9 +79,7 @@ namespace TestApplication
                             Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
                             subs[index] = null;
                         }
-
                     }
-
                     else
                     {
                         char[] MyChar = { '*' };
@@ -114,19 +93,12 @@ namespace TestApplication
                             Console.WriteLine($"\nПуть: {pc + subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
                             subs[index] = null;
                         }
-
                     }
                 }
                 ParameterizedThreadStart wi = new ParameterizedThreadStart(ClearFolder);
                 Thread thread = new Thread(ClearFolder);
                 thread.Start(subs);
-
             }
-
-
-
-            
-
         }
         static void NamePC(out string pc)
         {
@@ -158,7 +130,6 @@ namespace TestApplication
                     {
                         return;
                     }
-
                     Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
                 }
                 catch (Exception)
@@ -167,80 +138,31 @@ namespace TestApplication
                 }
             }
         }
-
-
         static void HardDelete(ref string FolderNam)
         {
             string FolderName = FolderNam + "_old";
 
             try
             {
-
                 Directory.Move(FolderNam, FolderName);
                 Console.WriteLine("\nКаталог есть и он уже переименован. Так возрадуемся этому :)");
-
             }
             catch (System.IO.IOException e)
             {
                 Console.WriteLine("\n{1}", "\n" + FolderNam + "\n", e.Message);
-     
             }
             
             if (Directory.Exists(FolderName))
             {
-                System.IO.DirectoryInfo di = new DirectoryInfo(FolderName);   //https://stackoverflow.com/questions/1288718/how-to-delete-all-files-and-folders-in-a-directory
+                System.IO.DirectoryInfo di = new DirectoryInfo(FolderName); 
                 foreach (FileInfo file in di.EnumerateFiles())
                 {
                     file.Delete();
                 }
                 Directory.Delete(FolderName, true);
-                Console.WriteLine(FolderName + "\n\n\n\n\n\n\n\n\n\n\nКаталог удален\n\n\n\n\n\n\n\n\n\n" + FolderNam);
+                Console.WriteLine(FolderName + "\nКаталог удален\n" + FolderNam);
             }
-            
         }
-
-        static void SoftDelete_old(ref string FolderNam)
-        {
-
-
-            try
-            {
-                //Класс DirectoryInfo как раз позволяет работать с папками. Создаём объект этого
-                //класса, в качестве параметра передав путь до папки.
-                DirectoryInfo di = new DirectoryInfo(FolderNam);
-                //Создаём массив дочерних вложенных директорий директории di
-                DirectoryInfo[] diA = di.GetDirectories();
-                //Создаём массив дочерних файлов директории di
-                FileInfo[] fi = di.GetFiles();
-                //В цикле пробегаемся по всем файлам директории di и удаляем их
-                foreach (FileInfo f in fi)
-                {
-                    f.Delete();
-                }
-                //В цикле пробегаемся по всем вложенным директориям директории di 
-                
-            }
-            //Начинаем перехватывать ошибки
-            //DirectoryNotFoundException - директория не найдена
-            catch (DirectoryNotFoundException ex)
-            {
-                Console.WriteLine("Директория не найдена. Ошибка: " + ex.Message);
-            }
-            //UnauthorizedAccessException - отсутствует доступ к файлу или папке
-            catch (UnauthorizedAccessException ex)
-            {
-                Console.WriteLine("Отсутствует доступ. Ошибка: " + ex.Message);
-            }
-            //Во всех остальных случаях
-            catch (Exception ex)
-            {
-                Console.WriteLine("Произошла ошибка. Обратитесь к администратору. Ошибка: " + ex.Message);
-            }
-
-
-
-        }
-
         static void SoftDelete(ref string FolderNam)
         {
             string deletePath = FolderNam; //Можно написать вот так string deletePath = @"D:\FolderToDelete";
@@ -259,7 +181,6 @@ namespace TestApplication
             }
             Console.ReadLine();
         }
-
         static void deleteFolder(string folder)
         {
             try
@@ -302,8 +223,6 @@ namespace TestApplication
                 Console.WriteLine("Произошла ошибка. Обратитесь к администратору. Ошибка: " + ex.Message);
             }
         }
-
-
     }
 }
 
