@@ -1,0 +1,322 @@
+
+using System.Threading;
+using System.Diagnostics;
+using System.Collections;
+using System;
+using System.Text;
+using System.IO;
+namespace TestApplication
+{
+    class program
+    {
+        static void ClearFolder(object argument)
+        {
+            Thread.Sleep(5000);
+            string[] subs = (string[])argument;
+            foreach (string subh in subs)
+            {
+                Console.WriteLine($"Substring: {subh}");
+            }
+          
+            for (int index = 0; index < subs.Length; index++)
+            {
+                if (subs[index] == null)
+                {
+                    continue;
+                }
+                if (subs[index].Contains("***"))
+                {
+                    char[] MyChar = { '*' };
+                    string FolderNam = subs[index].TrimEnd(MyChar);
+                    Console.WriteLine(FolderNam);
+                    SoftDelete(ref FolderNam);
+                }
+                else
+                {
+                    string FolderNam = subs[index];
+
+                    Console.WriteLine(FolderNam);
+                    HardDelete(ref FolderNam);
+
+                }
+            }
+        }
+
+        public static void Main()
+        {
+
+
+
+            while (true)
+            {
+                string conf;
+                StreamReader sr = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + "config.txt");
+                conf = sr.ReadToEnd();
+                sr.Close();
+                string[] subs = conf.Split("\r\n");
+
+
+                Console.WriteLine("\nWhat is your name PC?");
+                NamePC(out string pc);
+
+
+                //https://ru.stackoverflow.com/questions/557945/Установить-присутствует-ли-элемент-в-массиве-С
+                for (int index = 0; index < subs.Length; index++)  // Проверка на наличие узера
+                {
+
+                    if (subs[index].Contains("User"))
+                    {
+
+                        string[] userprofile = Directory.GetDirectories(pc + "users");
+                        for (int ind = 0; ind < userprofile.Length; ind++)
+                        {
+                            Console.WriteLine(ind + " - это индекс конкретного пользователя - " + userprofile[ind]);
+                        }
+                        Console.WriteLine("\nВыбери индекс пользователя у которого ты хочешь почистить папку или набери 999, чтобы пропустить данный путь");
+                        int ur = userprofile.Length;
+                        ReadNum(out int name, in ur);
+                        if (name == 999) continue;
+
+
+                        string value = Path.GetFileName(userprofile[name]);
+                        Console.WriteLine("\nТы выбрал = " + value + "\nНажми Enter");
+                        Console.ReadKey(true);
+
+
+                        subs[index] = pc + subs[index].Replace("userprofile", Path.GetFileName(userprofile[name]));
+
+
+
+                        char[] MyChar = { '*' };
+                        if (Directory.Exists(subs[index].TrimEnd(MyChar)))
+                        {
+                            subs[index] = subs[index];
+                            Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n прописан");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
+                            subs[index] = null;
+                        }
+
+                    }
+
+                    else
+                    {
+                        char[] MyChar = { '*' };
+                        if (Directory.Exists(pc + subs[index].TrimEnd(MyChar)))
+                        {
+                            subs[index] = pc + subs[index];
+                            Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n прописан");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"\nПуть: {pc + subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
+                            subs[index] = null;
+                        }
+
+                    }
+                }
+                ParameterizedThreadStart wi = new ParameterizedThreadStart(ClearFolder);
+                Thread thread = new Thread(ClearFolder);
+                thread.Start(subs);
+
+            }
+
+
+
+            
+
+        }
+        static void NamePC(out string pc)
+        {
+            while (true)
+            {
+                pc = @"\\" + Console.ReadLine() + @"\C$\"; // имя пк
+                try
+                {
+                    if (Directory.Exists(pc))
+                    {
+                        return;
+                    }
+                    Console.WriteLine("Не удалось получить доступ к ПК, попробуйте еще раз.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+            }
+        }
+        static void ReadNum(out int name, in int ur)
+        {
+            while (true)
+            {
+                try
+                {
+                    name = Convert.ToInt16(Console.ReadLine());
+                    if ((name >= 0 & name < ur) | name == 999)
+                    {
+                        return;
+                    }
+
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+            }
+        }
+
+
+        static void HardDelete(ref string FolderNam)
+        {
+            string FolderName = FolderNam + "_old";
+
+            try
+            {
+
+                Directory.Move(FolderNam, FolderName);
+                Console.WriteLine("\nКаталог есть и он уже переименован. Так возрадуемся этому :)");
+
+            }
+            catch (System.IO.IOException e)
+            {
+                Console.WriteLine("\n{1}", "\n" + FolderNam + "\n", e.Message);
+     
+            }
+            
+            if (Directory.Exists(FolderName))
+            {
+                System.IO.DirectoryInfo di = new DirectoryInfo(FolderName);   //https://stackoverflow.com/questions/1288718/how-to-delete-all-files-and-folders-in-a-directory
+                foreach (FileInfo file in di.EnumerateFiles())
+                {
+                    file.Delete();
+                }
+                Directory.Delete(FolderName, true);
+                Console.WriteLine(FolderName + "\n\n\n\n\n\n\n\n\n\n\nКаталог удален\n\n\n\n\n\n\n\n\n\n" + FolderNam);
+            }
+            
+        }
+
+        static void SoftDelete_old(ref string FolderNam)
+        {
+
+
+            try
+            {
+                //Класс DirectoryInfo как раз позволяет работать с папками. Создаём объект этого
+                //класса, в качестве параметра передав путь до папки.
+                DirectoryInfo di = new DirectoryInfo(FolderNam);
+                //Создаём массив дочерних вложенных директорий директории di
+                DirectoryInfo[] diA = di.GetDirectories();
+                //Создаём массив дочерних файлов директории di
+                FileInfo[] fi = di.GetFiles();
+                //В цикле пробегаемся по всем файлам директории di и удаляем их
+                foreach (FileInfo f in fi)
+                {
+                    f.Delete();
+                }
+                //В цикле пробегаемся по всем вложенным директориям директории di 
+                
+            }
+            //Начинаем перехватывать ошибки
+            //DirectoryNotFoundException - директория не найдена
+            catch (DirectoryNotFoundException ex)
+            {
+                Console.WriteLine("Директория не найдена. Ошибка: " + ex.Message);
+            }
+            //UnauthorizedAccessException - отсутствует доступ к файлу или папке
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine("Отсутствует доступ. Ошибка: " + ex.Message);
+            }
+            //Во всех остальных случаях
+            catch (Exception ex)
+            {
+                Console.WriteLine("Произошла ошибка. Обратитесь к администратору. Ошибка: " + ex.Message);
+            }
+
+
+
+        }
+
+        static void SoftDelete(ref string FolderNam)
+        {
+            string deletePath = FolderNam; //Можно написать вот так string deletePath = @"D:\FolderToDelete";
+            deleteFolder(deletePath); //Вызываем наш рекурсивный метод
+            //После вызова метода deleteFolder() папка, путь которой указан в deletePath,
+            //должна быть пуста. Остаётся просто удалить её.
+            //Делаем это, вызвав метод Directory.Delete().
+            try
+            {
+                Directory.Delete(deletePath);
+                Console.WriteLine("Папка {0} успешно удалена", deletePath);
+            }
+            catch
+            {
+                Console.WriteLine("При удалении папки возникли ошибки");
+            }
+            Console.ReadLine();
+        }
+
+        static void deleteFolder(string folder)
+        {
+            try
+            {
+                //Класс DirectoryInfo как раз позволяет работать с папками. Создаём объект этого
+                //класса, в качестве параметра передав путь до папки.
+                DirectoryInfo di = new DirectoryInfo(folder);
+                //Создаём массив дочерних вложенных директорий директории di
+                DirectoryInfo[] diA = di.GetDirectories();
+                //Создаём массив дочерних файлов директории di
+                FileInfo[] fi = di.GetFiles();
+                //В цикле пробегаемся по всем файлам директории di и удаляем их
+                foreach (FileInfo f in fi)
+                {
+                    f.Delete();
+                }
+                //В цикле пробегаемся по всем вложенным директориям директории di 
+                foreach (DirectoryInfo df in diA)
+                {
+                    //Как раз пошла рекурсия
+                    deleteFolder(df.FullName);
+                    //Если в папке нет больше вложенных папок и файлов - удаляем её,
+                    if (df.GetDirectories().Length == 0 && df.GetFiles().Length == 0) df.Delete();
+                }
+            }
+            //Начинаем перехватывать ошибки
+            //DirectoryNotFoundException - директория не найдена
+            catch (DirectoryNotFoundException ex)
+            {
+                Console.WriteLine("Директория не найдена. Ошибка: " + ex.Message);
+            }
+            //UnauthorizedAccessException - отсутствует доступ к файлу или папке
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine("Отсутствует доступ. Ошибка: " + ex.Message);
+            }
+            //Во всех остальных случаях
+            catch (Exception ex)
+            {
+                Console.WriteLine("Произошла ошибка. Обратитесь к администратору. Ошибка: " + ex.Message);
+            }
+        }
+
+
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
