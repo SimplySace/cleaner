@@ -1,0 +1,420 @@
+
+using System.Threading;
+using System.Diagnostics;
+using System.Collections;
+using System;
+using System.Text;
+using System.IO;
+namespace FolderCleaner
+{
+    class program
+    {
+        static void ClearFolder(object argument)
+        {
+            Thread.Sleep(10000);
+            string[] subs = (string[])argument;
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            foreach (string subh in subs)
+            {
+                Console.WriteLine($"Substring: {subh}");
+            }
+            Console.ResetColor();
+            double summax = 0;
+            string source = "";
+            for (int index = 0; index < subs.Length; index++)
+            {
+                if (subs[index] == null)
+                {
+                    continue;
+                }
+                if (subs[index].Contains("***"))
+                {
+                    char[] MyChar = { '*' };
+                    string FolderNam = subs[index].TrimEnd(MyChar);
+                    if (source == "")
+                    {
+                        source = FolderNam;
+                    }
+                    SoftDelete(ref FolderNam, ref summax);
+                }
+                else
+                {
+                    string FolderNam = subs[index];
+                    if (source == "")
+                    {
+                        source = FolderNam;
+                    }
+                    HardDelete(ref FolderNam, ref summax);
+                }
+
+            }
+            string NamePC = getBetween(source, "\\\\", "\\C$");
+            Console.ForegroundColor = ConsoleColor.Green;
+            if (summax / 1024 / 1024 < 1024)
+            {
+                Console.WriteLine("ПК {1} очищен на {0} мб", summax / 1024 / 1024, NamePC);
+            }
+            else
+            {
+                Console.WriteLine("ПК {1} очищен на {0} гб", summax / 1024 / 1024 / 1024, NamePC);
+            }
+            Console.ResetColor();
+        }
+
+        public static string getBetween(string strSource, string strStart, string strEnd)
+        {
+            if (strSource.Contains(strStart) && strSource.Contains(strEnd))
+            {
+                int Start, End;
+                Start = strSource.IndexOf(strStart, 0) + strStart.Length;
+                End = strSource.IndexOf(strEnd, Start);
+                return strSource.Substring(Start, End - Start);
+            }
+            return "";
+        }
+
+        static void AllUser(ref string[] subs, in string pc, out string all)
+        {
+            while (true)
+            {
+                Console.WriteLine("Введи y - если хочешь пройтись по всем, n - только у выбранного");
+                all = Console.ReadLine();
+                try
+                {
+                    if (all == "n")
+                    {
+                        return;
+                    }
+                    if (all == "y")
+                    {
+                        string Ignor;
+                        using (StreamReader sr = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + "IgnorUser.txt"))
+                        {
+                            Ignor = sr.ReadToEnd().ToLower();
+                            sr.Close();
+                        }
+                        string[] IgnorUser = Ignor.Split("\r\n");
+                        string[] userprofile = Directory.GetDirectories(pc + "users");
+                        for (int ind = 0; ind < userprofile.Length; ind++)
+                        {
+                            userprofile[ind] = userprofile[ind].ToLower();
+                            for (int i = 0; i < IgnorUser.Length; i = i + 1)
+                            {
+
+                                IgnorUser[i] = IgnorUser[i].ToLower();
+                                if (userprofile[ind] == null)
+                                {
+                                    break;
+                                }
+                                if (Path.GetFileName(userprofile[ind]) == IgnorUser[i])
+                                {
+                                    userprofile[ind] = null;
+                                    break;
+                                }
+                                else
+                                {
+                                }
+                            }
+                        }
+
+                        userprofile = userprofile.Where(x => x != null).ToArray();
+
+
+                        for (int index = 0; index < subs.Length; index++)
+                        {
+                            if (subs[index].Contains("userprofile"))
+                            {
+                                for (int u = 0; u < userprofile.Length; u++)
+                                {
+                                    Array.Resize(ref subs, subs.Length + 1);
+                                    subs[subs.Length - 1] = subs[index].Replace("userprofile", Path.GetFileName(userprofile[u]));
+                                }
+                                subs[index] = null;
+                            }
+                        }
+                        subs = subs.Where(x => x != null).ToArray();
+
+
+                        for (int index = 0; index < subs.Length; index++)
+                        {
+                            subs[index] = pc + subs[index];
+                            char[] MyChar = { '*' };
+                            if (Directory.Exists(subs[index].TrimEnd(MyChar)))
+                            {
+                                subs[index] = subs[index];
+                                Console.WriteLine($"Путь: {subs[index].TrimEnd(MyChar)}\n прописан");
+                            }
+                            else
+                            {
+                                subs[index] = null;
+                            }
+                        }
+                        subs = subs.Where(x => x != null).ToArray();
+                        return;
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+            }
+        }
+
+        public static void Main()
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.WriteLine("В папке где находится программа должны быть файлы Config.txt и IgnorUser.txt \nБез этих файлов программа работать НЕ будет, эти файлы не должны содержать пустых значений!");
+            Console.WriteLine("Config.txt - здесь указываются папки кторые должны быть удаленны (например, Users\\userprofile\\имя папки)");
+            Console.WriteLine("В файле должен быть указан только путь, никаких пробелов после него, цифр, знаков быть не должно. Путь делится на два, при помощи клавищи Enter");
+            Console.WriteLine("Если в конце пути добавить (***) то сама папка останется (пропадет только ее содержимое), в случае возниковения ошибок (например, нет доступа к файлу) объект пропускается и выводится на экран cоответствующее сообщение");
+            Console.WriteLine("IgnorUser.txt - здесь указываются исключения при очитке у всех пользователей (например, Default User). Файл не должен быть пустой (иначе будет ошибка), не важно что именно будет там указанно!");
+            Console.WriteLine("PS, серым текстом указываются фоновые процессы");
+            Console.ResetColor();
+            while (true)
+            {
+                string conf;
+                using (StreamReader sr = new StreamReader(AppDomain.CurrentDomain.BaseDirectory + "Config.txt"))
+                {
+                    conf = sr.ReadToEnd().ToLower();
+                    sr.Close();
+                }
+                string[] subs = conf.Split("\r\n");
+                for (int index = 0; index < subs.Length; index++)
+                {
+                    char[] MyC = { ' ', '*' };
+                    if (subs[index] == null | subs[index] == "" | "" == subs[index].TrimEnd(MyC))
+                    {
+                        Console.WriteLine("В файле config.txt прописан неверный путь (строка номер - {0}), в нем не допускаются пустые значения. \nПроверь правильность пути и попробуй еще раз.", index + 1);
+                        return;
+                    }
+                }
+                Console.WriteLine("What is your name PC?");
+                NamePC(out string pc);
+                AllUser(ref subs, in pc, out string all);
+                for (int index = 0; index < subs.Length; index++) 
+                {
+                    if (all == "n")
+                    {
+                        if (subs[index].Contains("userprofile"))
+                        {
+                            string[] userprofile = Directory.GetDirectories(pc + "users");
+                            for (int ind = 0; ind < userprofile.Length; ind++)
+                            {
+                                Console.WriteLine(ind + " - это индекс конкретного пользователя - " + userprofile[ind]);
+                            }
+                            Console.WriteLine("\nВыбери индекс пользователя у которого ты хочешь почистить папку или набери 999, чтобы пропустить данный путь");
+                            int ur = userprofile.Length;
+                            ReadNum(out int name, in ur);
+                            if (name == 999) continue;
+                            string value = Path.GetFileName(userprofile[name]);
+                            subs[index] = pc + subs[index].Replace("userprofile", Path.GetFileName(userprofile[name]));
+                            char[] MyChar = { '*' };
+                            if (Directory.Exists(subs[index].TrimEnd(MyChar)))
+                            {
+                                subs[index] = subs[index];
+                                Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n прописан");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n отсутсвует и был исключен из списка");
+                                subs[index] = null;
+                            }
+                        }
+                        else
+                        {
+                            char[] MyChar = { '*' };
+                            if (Directory.Exists(pc + subs[index].TrimEnd(MyChar)))
+                            {
+                                subs[index] = pc + subs[index];
+                                Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n прописан");
+                            }
+                            else
+                            {
+                                Console.WriteLine($"\nПуть: {pc + subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
+                                subs[index] = null;
+                            }
+
+                        }
+
+                    }
+                }
+                Console.WriteLine("\nНажми Enter");
+                Console.ReadKey(true);
+                ParameterizedThreadStart wi = new ParameterizedThreadStart(ClearFolder);
+                Thread thread = new Thread(ClearFolder);
+                thread.Start(subs);
+
+            }
+        }
+        static void NamePC(out string pc)
+        {
+            while (true)
+            {
+                pc = @"\\" + Console.ReadLine() + @"\C$\";
+                try
+                {
+                    if (Directory.Exists(pc))
+                    {
+                        return;
+                    }
+                    Console.WriteLine("Не удалось получить доступ к ПК, попробуйте еще раз.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+            }
+        }
+        static void ReadNum(out int name, in int ur)
+        {
+            while (true)
+            {
+                try
+                {
+                    name = Convert.ToInt16(Console.ReadLine());
+                    if ((name >= 0 & name < ur) | name == 999)
+                    {
+                        return;
+                    }
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Введено недопустимое значение, попробуйте еще раз.");
+                }
+            }
+        }
+
+        static void SoftDelete(ref string FolderNam, ref double summax)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            double sumSoft = 0;
+            string deletePath = FolderNam;
+            deleteFolder(deletePath, ref sumSoft); 
+            try
+            {
+                Console.WriteLine("Папка {0} успешно очищена", deletePath);
+            }
+            catch
+            {
+                Console.WriteLine("При очистки папки {0} возникли ошибки", deletePath);
+            }
+            if (sumSoft / 1024 / 1024 < 1024)
+            {
+                Console.WriteLine("Папка очищена на {0} мб", sumSoft / 1024 / 1024);
+            }
+            else
+            {
+                Console.WriteLine("Папка очищена на {0} гб", sumSoft / 1024 / 1024 / 1024);
+            }
+            summax += sumSoft;
+            Console.ResetColor();
+
+
+        }
+        static void deleteFolder(string folder, ref double sumSoft)
+        {
+            try
+            {
+                DirectoryInfo di = new DirectoryInfo(folder);
+                DirectoryInfo[] diA = di.GetDirectories();
+                foreach (FileInfo f in di.EnumerateFiles())
+                {
+                    sumSoft += f.Length;
+                    f.Delete();
+                }
+                foreach (DirectoryInfo df in diA)
+                {
+                    deleteFolder(df.FullName, ref sumSoft);
+                    if (df.GetDirectories().Length == 0 && df.GetFiles().Length == 0) df.Delete();
+                }
+            }
+            catch (DirectoryNotFoundException ex)
+            {
+                Console.WriteLine("Директория не найдена. Ошибка: " + ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                Console.WriteLine("Отсутствует доступ. Ошибка: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Произошла ошибка. Обратитесь к администратору. Ошибка: " + ex.Message);
+            }
+        }
+
+        static void HardDelete(ref string FolderNam, ref double summax)
+        {
+            Console.ForegroundColor = ConsoleColor.DarkGray;
+            string FolderName = FolderNam + "_old";
+            try
+            {
+                Directory.Move(FolderNam, FolderName);
+            }
+            catch (System.IO.IOException e)
+            {
+                Console.WriteLine("\n{1}", "\n" + FolderNam + "\n", e.Message);
+                return;
+            }
+
+            double sum = 0;
+            string deletePath = FolderName; 
+            deleteFolderHard(deletePath, ref sum); 
+            try
+            {
+                Directory.Delete(deletePath, true);
+                Console.WriteLine("Папка {0} успешно очищена", deletePath);
+            }
+            catch
+            {
+                Console.WriteLine("При очистки папки {0} возникли ошибки", deletePath);
+            }
+            if (sum / 1024 / 1024 < 1024)
+            {
+                Console.WriteLine("Папка очищена на {0} мб", sum / 1024 / 1024);
+            }
+            else
+            {
+                Console.WriteLine("Папка очищена на {0} гб", sum / 1024 / 1024 / 1024);
+            }
+            summax += sum;
+            Console.ResetColor();
+        }
+
+        static void deleteFolderHard(string folder, ref double sum)
+        {
+            DirectoryInfo di = new DirectoryInfo(folder);
+            DirectoryInfo[] diA = di.GetDirectories();
+            foreach (FileInfo f in di.EnumerateFiles())
+            {
+                f.Attributes = FileAttributes.Normal;
+                sum += f.Length;
+                f.Delete();
+            }
+            foreach (DirectoryInfo df in diA)
+            {
+                deleteFolderHard(df.FullName, ref sum);
+                if (df.GetDirectories().Length == 0 && df.GetFiles().Length == 0)
+                {
+                    df.Attributes = FileAttributes.Normal;
+                    df.Delete();
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
