@@ -16,7 +16,7 @@ namespace FolderCleaner
             Console.ForegroundColor = ConsoleColor.DarkGray;
             foreach (string subh in subs)
             {
-                Console.WriteLine($"Substring: {subh}");
+                Console.WriteLine($"Path: {subh}");
             }
             Console.ResetColor();
             double summax = 0;
@@ -163,12 +163,14 @@ namespace FolderCleaner
         public static void Main()
         {
             Console.ForegroundColor = ConsoleColor.Green;
-            Console.WriteLine("В папке где находится программа должны быть файлы Config.txt и IgnorUser.txt \nБез этих файлов программа работать НЕ будет, эти файлы не должны содержать пустых значений!");
-            Console.WriteLine("Config.txt - здесь указываются папки кторые должны быть удаленны (например, Users\\userprofile\\имя папки)");
-            Console.WriteLine("В файле должен быть указан только путь, никаких пробелов после него, цифр, знаков быть не должно. Путь делится на два, при помощи клавищи Enter");
-            Console.WriteLine("Если в конце пути добавить (***) то сама папка останется (пропадет только ее содержимое), в случае возниковения ошибок (например, нет доступа к файлу) объект пропускается и выводится на экран cоответствующее сообщение");
-            Console.WriteLine("IgnorUser.txt - здесь указываются исключения при очитке у всех пользователей (например, Default User). Файл не должен быть пустой (иначе будет ошибка), не важно что именно будет там указанно!");
+            Console.WriteLine("В папке, где находится программа, должны быть файлы Config.txt и IgnorUser.txt \nБез этих файлов программа работать НЕ будет, эти файлы не должны содержать пустых значений!");
+            Console.WriteLine("Config.txt - здесь указываются папки которые должны быть удаленны (например, Users\\userprofile\\имя папки)");
+            Console.WriteLine("В файле должен быть указан только путь, никаких пробелов после него, цифр, знаков быть не должно. Путь можно разделить при помощи клавиши Enter");
+            Console.WriteLine("Если в конце пути добавить (***) то сама папка останется (пропадет только ее содержимое), в случае возникновения ошибок (например, нет доступа к файлу) объект пропускается и выводится на экран сообщение");
+            Console.WriteLine("IgnorUser.txt - здесь указываются исключения при очитке у всех пользователей (например, Default User). Файл не должен быть пустым (иначе будет ошибка), не важно что именно будет там указанно!");
             Console.WriteLine("PS, серым текстом указываются фоновые процессы");
+            Console.WriteLine("\nНажми Enter");
+            Console.ReadKey(true);
             Console.ResetColor();
             while (true)
             {
@@ -216,7 +218,7 @@ namespace FolderCleaner
                             }
                             else
                             {
-                                Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n отсутсвует и был исключен из списка");
+                                Console.WriteLine($"\nПуть: {subs[index].TrimEnd(MyChar)}\n отсутствует и был исключен из списка");
                                 subs[index] = null;
                             }
                         }
@@ -230,7 +232,7 @@ namespace FolderCleaner
                             }
                             else
                             {
-                                Console.WriteLine($"\nПуть: {pc + subs[index].TrimEnd(MyChar)}\n отсутсвуети и был исключен из списка");
+                                Console.WriteLine($"\nПуть: {pc + subs[index].TrimEnd(MyChar)}\n отсутствует и был исключен из списка");
                                 subs[index] = null;
                             }
 
@@ -250,7 +252,7 @@ namespace FolderCleaner
         {
             while (true)
             {
-                pc = @"\\" + Console.ReadLine() + @"\C$\";
+                pc = @"\\" + Console.ReadLine() + @"\C$\"; 
                 try
                 {
                     if (Directory.Exists(pc))
@@ -289,15 +291,15 @@ namespace FolderCleaner
         {
             Console.ForegroundColor = ConsoleColor.DarkGray;
             double sumSoft = 0;
-            string deletePath = FolderNam;
-            deleteFolder(deletePath, ref sumSoft); 
+            string deletePath = FolderNam; 
+            deleteFolder(deletePath, ref sumSoft);
             try
             {
                 Console.WriteLine("Папка {0} успешно очищена", deletePath);
             }
             catch
             {
-                Console.WriteLine("При очистки папки {0} возникли ошибки", deletePath);
+                Console.WriteLine("При очистке папки {0} возникли ошибки", deletePath);
             }
             if (sumSoft / 1024 / 1024 < 1024)
             {
@@ -320,8 +322,14 @@ namespace FolderCleaner
                 DirectoryInfo[] diA = di.GetDirectories();
                 foreach (FileInfo f in di.EnumerateFiles())
                 {
-                    sumSoft += f.Length;
-                    f.Delete();
+                    try
+                    {
+                        sumSoft += f.Length;
+                        f.Delete();
+                    }
+                    catch (Exception ex)
+                    {                    }
+
                 }
                 foreach (DirectoryInfo df in diA)
                 {
@@ -367,7 +375,7 @@ namespace FolderCleaner
             }
             catch
             {
-                Console.WriteLine("При очистки папки {0} возникли ошибки", deletePath);
+                Console.WriteLine("При очистке папки {0} возникли ошибки", deletePath);
             }
             if (sum / 1024 / 1024 < 1024)
             {
@@ -403,18 +411,3 @@ namespace FolderCleaner
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
